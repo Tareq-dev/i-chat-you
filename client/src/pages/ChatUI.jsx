@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { IoIosArrowBack } from "react-icons/io";
 import { BiSend } from "react-icons/bi";
-
+import socket from "../socket";
 const users = [
     { name: "Rahim", avatar: "https://i.pravatar.cc/150?img=1", online: true },
     { name: "Karim", avatar: "https://i.pravatar.cc/150?img=2", online: false },
@@ -18,6 +18,22 @@ const ChatUI = () => {
     const [input, setInput] = useState("");
 
     const chatRef = useRef(null);
+    //JOIN Socket
+    useEffect(() => {
+        socket.emit("join", name);
+
+        socket.on("receiveMessage", (msg) => {
+            setMessages((prev) => [
+                ...prev,
+                { text: msg.text, sender: "other" },
+            ]);
+        });
+
+        return () => {
+            socket.off("receiveMessage");
+        };
+    }, [name]);
+
 
     // find user from param
     useEffect(() => {
@@ -32,11 +48,27 @@ const ChatUI = () => {
         chatRef.current?.scrollTo(0, chatRef.current.scrollHeight);
     }, [messages]);
 
-    const sendMessage = () => {
-        if (!input.trim()) return;
-        setMessages((prev) => [...prev, { text: input, sender: "me" }]);
-        setInput("");
-    };
+    // const sendMessage = () => {
+    //     if (!input.trim()) return;
+    //     setMessages((prev) => [...prev, { text: input, sender: "me" }]);
+    //     setInput("");
+    // };
+const sendMessage = () => {
+  if (!input.trim()) return;
+
+  setMessages((prev) => [
+    ...prev,
+    { text: input, sender: "me" },
+  ]);
+
+  socket.emit("sendMessage", {
+    sender: name,
+    receiver: "Rahim", // dynamic later
+    text: input,
+  });
+
+  setInput("");
+};
 
     return (
         <div className="h-[600px] max-w-md mx-auto bg-gray-900 text-white overflow-hidden flex flex-col">
