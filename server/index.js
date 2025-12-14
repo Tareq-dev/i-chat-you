@@ -15,9 +15,9 @@ app.use(cors());
 app.use(express.json());
 
 // DB
-mongoose.connect("mongodb://127.0.0.1:27017/chat-app")
+mongoose.connect("mongodb+srv://tarequedev_db_user:hBTM0jMpGZgKI9Rr@cluster0.brhpfin.mongodb.net/?appName=Cluster0")
     .then(() => { console.log("Mongo baby connected") })
-    .catch((err) => console.log("Mongo Error",err));
+    .catch((err) => console.log("Mongo Error", err));
 
 // routes
 app.use("/api/auth", require("./routes/auth"));

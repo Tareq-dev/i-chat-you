@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../api";
 import socket from "../socket";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 const ChatList = () => {
   const [users, setUsers] = useState([]);
@@ -37,9 +37,8 @@ const ChatList = () => {
         >
           <span>{u}</span>
           <span
-            className={`w-3 h-3 rounded-full ${
-              online.includes(u) ? "bg-green-500" : "bg-gray-500"
-            }`}
+            className={`w-3 h-3 rounded-full ${online.includes(u) ? "bg-green-500" : "bg-gray-500"
+              }`}
           />
         </div>
       ))}

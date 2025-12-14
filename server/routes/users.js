@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const User = require("../models/User");
+const User = require("../models/Users");
 
 router.get("/search/:username", async (req, res) => {
   const user = await User.findOne({

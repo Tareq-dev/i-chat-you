@@ -1,6 +1,8 @@
 import React from 'react'
 import ChatUI from './pages/ChatUI'
+import Auth from './pages/Auth'
 import Home from './pages/Home'
+import ChatList from './pages/ChatList';
 import { Routes, Route } from "react-router";
 
 function App() {
@@ -9,9 +11,8 @@ function App() {
 
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/chats" element={<ChatList />} />
+        <Route path="/login" element={<Auth />} />
+        {/* <Route path="/chats" element={<ChatList />} /> */}
         <Route path="/chat/:sender/:receiver" element={<ChatUI />} />
 
       </Routes>
