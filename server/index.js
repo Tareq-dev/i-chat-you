@@ -1,55 +1,31 @@
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
+const mongoose = require("mongoose");
 const cors = require("cors");
 
 const app = express();
-app.use(cors());
-
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: {
-    origin: "*", // frontend url later set korbo
-  },
+    cors: { origin: "*" },
 });
 
-// store online users
-let onlineUsers = {};
+app.use(cors());
+app.use(express.json());
 
-io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+// DB
+mongoose.connect("mongodb://127.0.0.1:27017/chat-app")
+    .then(() => { console.log("Mongo baby connected") })
+    .catch((err) => console.log("Mongo Error",err));
 
-  // user online
-  socket.on("join", (username) => {
-    onlineUsers[username] = socket.id;
-    io.emit("onlineUsers", Object.keys(onlineUsers));
-  });
+// routes
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/users", require("./routes/users"));
+app.use("/api/chats", require("./routes/chats"));
 
-  // receive message
-  socket.on("sendMessage", ({ sender, receiver, text }) => {
-    const receiverSocketId = onlineUsers[receiver];
-
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("receiveMessage", {
-        sender,
-        text,
-      });
-    }
-  });
-
-  // disconnect
-  socket.on("disconnect", () => {
-    for (let user in onlineUsers) {
-      if (onlineUsers[user] === socket.id) {
-        delete onlineUsers[user];
-        break;
-      }
-    }
-    io.emit("onlineUsers", Object.keys(onlineUsers));
-  });
-});
+require("./socket")(io);
 
 server.listen(5000, () => {
-  console.log("Server running on http://localhost:5000");
+    console.log("Server running on 5000");
 });
