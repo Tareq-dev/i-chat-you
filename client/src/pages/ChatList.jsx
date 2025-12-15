@@ -8,6 +8,7 @@ const ChatList = () => {
   const [online, setOnline] = useState([]);
   const me = localStorage.getItem("username");
   const navigate = useNavigate();
+  console.log(me)
 
   useEffect(() => {
     socket.emit("join", me);
@@ -24,7 +25,6 @@ const ChatList = () => {
       setUsers(res.data);
     });
   }, [me]);
-
   return (
     <div className="h-screen bg-gray-900 text-white">
       <h2 className="p-4 font-bold text-lg">Chats</h2>

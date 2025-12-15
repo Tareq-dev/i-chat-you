@@ -7,25 +7,45 @@ const User = require("../models/Users");
 router.post("/register", async (req, res) => {
     const { username, password } = req.body;
 
-    const hashed = await bcrypt.hash(password, 10);
-    await User.create({ username, password: hashed });
+    const exist = await User.findOne({ username });
+    if (exist) {
+        return res.status(400).json({ message: "User already exists" });
+    }
 
-    res.json({ message: "Registered" });
+    // 🔥 HASH PASSWORD
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+        username,
+        password: hashedPassword
+    });
+
+    res.json({ message: "User registered" });
 });
 
 // Login
 router.post("/login", async (req, res) => {
     const { username, password } = req.body;
-
     const user = await User.findOne({ username });
+
     if (!user) return res.status(404).json("User not found");
 
     const ok = await bcrypt.compare(password, user.password);
+    
     if (!ok) return res.status(401).json("Wrong password");
 
-    const token = jwt.sign({ id: user._id }, "SECRET");
+    const token = jwt.sign(
+        { userId: user._id },
+        "SECRET_KEY",
+        { expiresIn: "7d" }
+    );
 
-    res.json({ token, username });
+    // 🔥 IMPORTANT RESPONSE
+    res.json({
+        token,
+        userId: user._id,
+        username: user.username
+    });
 });
 
 module.exports = router;

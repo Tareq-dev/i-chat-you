@@ -3,6 +3,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const chatSocket = require("./sockets/chatSocket");
 
 const app = express();
 const server = http.createServer(app);
@@ -23,8 +24,10 @@ mongoose.connect("mongodb+srv://tarequedev_db_user:hBTM0jMpGZgKI9Rr@cluster0.brh
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/users", require("./routes/users"));
 app.use("/api/chats", require("./routes/chats"));
+app.use("/api/conversation", require("./routes/conversation"));
 
-require("./socket")(io);
+
+chatSocket(io);
 
 server.listen(5000, () => {
     console.log("Server running on 5000");

@@ -23,66 +23,114 @@ const usersData = [
         unread: 0,
         online: false,
     },
-    {
-        id: 3,
-        name: "Jamal",
-        avatar: "https://i.pravatar.cc/150?img=3",
-        lastMessage: "ডকুমেন্ট পাঠাইছি",
-        time: "Yesterday",
-        unread: 5,
-        online: true,
-    },
-    {
-        id: 4,
-        name: "Sakib",
-        avatar: "https://i.pravatar.cc/150?img=4",
-        lastMessage: "Thanks bro 🙏",
-        time: "Yesterday",
-        unread: 0,
-        online: false,
-    },
 ];
-
-
 
 function Home() {
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchText, setSearchText] = useState("");
+    const [searchResult, setSearchResult] = useState([]);
+    const [loading, setLoading] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [users, setUsers] = useState(usersData);
+    const navigate = useNavigate();
+    const me = localStorage.getItem("username");
 
-    const filteredUsers = users.filter((user) =>
-        user.name.toLowerCase().includes(searchText.toLowerCase())
-    );
-    let navigate = useNavigate();
-    const openChat = (user) => {
-        setUsers((prev) =>
-            prev.map((u) =>
-                u.name === user.name ? { ...u, unread: 0 } : u
-            )
-        );
+    // 🔍 API CALL (ONLY ON BUTTON CLICK)
+    const searchUsers = async () => {
+        if (!searchText.trim()) return;
 
-        navigate("/chat/" + user.name);
+        try {
+            setLoading(true);
+            const res = await fetch(
+                `http://localhost:5000/api/users/search/${searchText}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                }
+            );
+
+            const data = await res.json();
+
+            // 👇 ALWAYS ARRAY
+            if (Array.isArray(data)) {
+                setSearchResult(data);
+                setSearchText("");
+            } else if (data && data._id) {
+                setSearchResult([data]);
+                setSearchText("");
+            } else {
+                setSearchResult([]);
+            }
+
+        } catch (err) {
+            console.error("Search error", err);
+            setSearchResult([]);
+        } finally {
+            setLoading(false);
+        }
     };
+
+    const openChat = async (user) => {
+        const myId = localStorage.getItem("userId");
+
+        const res = await fetch("http://localhost:5000/api/conversation", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`
+            },
+            body: JSON.stringify({
+                senderId: myId,
+                receiverId: user._id
+            })
+        });
+
+        const conversation = await res.json();
+        // 👉 REAL individual chat
+        navigate(`/chat/${conversation._id}`);
+    };
+
 
     return (
         <div className="h-155 max-w-md mx-auto bg-gray-900 text-white shadow-lg overflow-hidden relative">
-                           <h1 className='text-4xl px-13 font-bold font-serif border-b border-gray-600 text-purple-500 text-center bg-gray-900'>I Chat You</h1>
+
+            <h1 className="text-3xl py-3 font-bold text-purple-500 text-center border-b border-gray-700">
+                I Chat You
+            </h1>
 
             {/* Header */}
             <div className="flex justify-between items-center p-4">
                 <p className="text-lg font-semibold">Messages</p>
 
                 <div className="flex gap-2">
+                    {/* SEARCH BUTTON */}
                     <button
                         onClick={() => {
-                            if (searchOpen) setSearchText("");
-                            setSearchOpen(!searchOpen);
+                            if (!searchOpen) {
+                                setSearchOpen(true);
+                            } else {
+                                searchUsers();
+                            }
                         }}
                         className="border border-gray-600 rounded-full w-8 h-8 flex justify-center items-center"
                     >
-                        {searchOpen ? <IoClose size={16} /> : <FiSearch size={14} />}
+                        <FiSearch size={14} />
                     </button>
+
+                    {/* CLOSE BUTTON */}
+                    {searchOpen && (
+                        <button
+                            onClick={() => {
+                                setSearchOpen(false);
+                                setSearchText("");
+                                setSearchResult([]);
+                            }}
+                            className="border border-gray-600 rounded-full w-8 h-8 flex justify-center items-center"
+                        >
+                            <IoClose size={16} />
+                        </button>
+                    )}
 
                     <button
                         onClick={() => setShowSettings(true)}
@@ -94,54 +142,83 @@ function Home() {
             </div>
 
             {/* Search Input */}
-            <div
-                className={`px-4 overflow-hidden transition-all duration-300 ${searchOpen ? "max-h-20 mt-3" : "max-h-0"
-                    }`}
-            >
-                <input
-                    type="text"
-                    placeholder="Search user..."
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm outline-none"
-                />
-            </div>
+            {searchOpen && (
+                <div className="px-4 mt-2">
+                    <input
+                        type="text"
+                        placeholder="Search user..."
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm outline-none"
+                    />
+                </div>
+            )}
+
+            {/* Search Result */}
+            {searchOpen && (
+                <div className="px-4 mt-3 max-h-60 overflow-y-auto">
+                    {loading && (
+                        <p className="text-sm text-gray-400">Searching...</p>
+                    )}
+
+                    {!loading && searchText && searchResult.length === 0 && (
+                        <p className="text-sm text-gray-400">No user found</p>
+                    )}
+                    {searchResult.map((user) => (
+                        <div
+                            key={user._id}
+                            className="flex items-center border border-gray-600 justify-between p-2 rounded hover:bg-gray-700"
+                        >
+                            <div className="flex gap-4">
+                                <p className="text-sm ml-2 font-medium">{user.username}</p>
+
+                                <div className="flex items-center gap-1 text-xs">
+                                    <span
+                                        className={`w-2 h-2 rounded-full ${user.online ? "bg-green-500" : "bg-gray-500"
+                                            }`}
+                                    ></span>
+
+                                    <span className="text-gray-400">
+                                        {user.online ? "Online" : "Offline"}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <button onClick={() => openChat(user)} className="bg-green-800 px-3 cursor-pointer py-1 rounded">Chat</button>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* User List */}
-            <div className="mt-3 overflow-y-auto h-full hide-scrollbar bg-gray-800 rounded-t-3xl">
-                {filteredUsers.map((user) => (
+            <div
+                className={`mt-3 overflow-y-auto h-full bg-gray-800 rounded-t-3xl ${searchOpen ? "opacity-40 pointer-events-none" : ""
+                    }`}
+            >
+                {users.map((user) => (
                     <div
                         key={user.id}
                         onClick={() => openChat(user)}
-
-                        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-700 cursor-pointer transition"
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-700 cursor-pointer"
                     >
-                        {/* Avatar */}
-                        <div className="relative">
-                            <img
-                                src={user.avatar}
-                                alt={user.name}
-                                className="w-12 h-12 rounded-full"
-                            />
-                            <span
-                                className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-gray-800 ${user.online ? "bg-green-500" : "bg-gray-400"
-                                    }`}
-                            />
-                        </div>
+                        <img
+                            src={user.avatar}
+                            alt={user.name}
+                            className="w-12 h-12 rounded-full"
+                        />
 
-                        {/* Info */}
                         <div className="flex-1">
-                            <div className="flex justify-between items-center">
-                                <p className="font-medium">{user.name}</p>
-                                <span className="text-xs text-gray-400">{user.time}</span>
+                            <div className="flex justify-between">
+                                <p>{user.name}</p>
+                                <span className="text-xs text-gray-400">
+                                    {user.time}
+                                </span>
                             </div>
-
                             <p className="text-sm text-gray-400 truncate">
                                 {user.lastMessage}
                             </p>
                         </div>
 
-                        {/* Unread Badge */}
                         {user.unread > 0 && (
                             <span className="bg-red-500 text-xs px-2 py-0.5 rounded-full">
                                 {user.unread}
@@ -151,7 +228,7 @@ function Home() {
                 ))}
             </div>
 
-            {/* Settings Modal */}
+            {/* Settings */}
             {showSettings && (
                 <div
                     onClick={() => setShowSettings(false)}

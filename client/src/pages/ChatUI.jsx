@@ -178,21 +178,18 @@
 
 // export default ChatUI;
 
-
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { IoIosArrowBack } from "react-icons/io";
 import { BiSend } from "react-icons/bi";
 import socket from "../socket";
+import API from "../api";
 
-const users = [
-    { name: "Rahim", avatar: "https://i.pravatar.cc/150?img=1" },
-    { name: "Karim", avatar: "https://i.pravatar.cc/150?img=2" },
-    { name: "Jamal", avatar: "https://i.pravatar.cc/150?img=3" },
-];
 
 const ChatUI = () => {
-    const { sender, receiver } = useParams();
+    const { conversationId } = useParams();
+    const myId = localStorage.getItem("userId");
+    const myName = localStorage.getItem("username");
     const navigate = useNavigate();
 
     const [activeUser, setActiveUser] = useState(null);
@@ -202,91 +199,140 @@ const ChatUI = () => {
     const [onlineUsers, setOnlineUsers] = useState([]);
 
     const chatRef = useRef(null);
-
     useEffect(() => {
-        socket.emit("join", sender);
+        socket.emit("join_conversation", conversationId);
+    }, [conversationId]);
+    // useEffect(() => {
+    //     socket.emit("join", sender);
 
-        socket.on("receiveMessage", (msg) => {
-            setMessages((p) => [...p, { ...msg, status: "delivered" }]);
+    //     socket.on("receiveMessage", (msg) => {
+    //         setMessages((p) => [...p, { ...msg, status: "delivered" }]);
+    //     });
+
+    //     socket.on("typing", () => setTyping(true));
+    //     socket.on("stopTyping", () => setTyping(false));
+    //     socket.on("onlineUsers", setOnlineUsers);
+
+    //     socket.on("delivered", () => {
+    //         setMessages((p) =>
+    //             p.map((m, i) =>
+    //                 i === p.length - 1 ? { ...m, status: "delivered" } : m
+    //             )
+    //         );
+    //     });
+
+    //     socket.on("seen", () => {
+    //         setMessages((p) =>
+    //             p.map((m) =>
+    //                 m.sender === "me" ? { ...m, status: "seen" } : m
+    //             )
+    //         );
+    //     });
+
+    //     return () => socket.removeAllListeners();
+    // }, [sender]);
+
+    // useEffect(() => {
+    //     const u = users.find(
+    //         (x) => x.name.toLowerCase() === receiver.toLowerCase()
+    //     );
+    //     if (u)
+    //         setActiveUser({
+    //             ...u,
+    //             online: onlineUsers.includes(receiver),
+    //         });
+    // }, [receiver, onlineUsers]);
+
+    // useEffect(() => {
+    //     chatRef.current?.scrollTo(0, chatRef.current.scrollHeight);
+    //     socket.emit("seen", { sender, receiver });
+    // }, [messages]);
+
+    // Receive message from socket
+    useEffect(() => {
+        socket.on("receive_message", (message) => {
+            setMessages((prev) => [...prev, message]);
         });
 
-        socket.on("typing", () => setTyping(true));
-        socket.on("stopTyping", () => setTyping(false));
-        socket.on("onlineUsers", setOnlineUsers);
-
-        socket.on("delivered", () => {
-            setMessages((p) =>
-                p.map((m, i) =>
-                    i === p.length - 1 ? { ...m, status: "delivered" } : m
-                )
-            );
-        });
-
-        socket.on("seen", () => {
-            setMessages((p) =>
-                p.map((m) =>
-                    m.sender === "me" ? { ...m, status: "seen" } : m
-                )
-            );
-        });
-
-        return () => socket.removeAllListeners();
-    }, [sender]);
-
-    useEffect(() => {
-        const u = users.find(
-            (x) => x.name.toLowerCase() === receiver.toLowerCase()
-        );
-        if (u)
-            setActiveUser({
-                ...u,
-                online: onlineUsers.includes(receiver),
-            });
-    }, [receiver, onlineUsers]);
-
-    useEffect(() => {
-        chatRef.current?.scrollTo(0, chatRef.current.scrollHeight);
-        socket.emit("seen", { sender, receiver });
-    }, [messages]);
+        return () => {
+            socket.off("receive_message");
+        };
+    }, []);
 
     const sendMessage = () => {
         if (!input.trim()) return;
 
-        setMessages((p) => [
-            ...p,
-            { text: input, sender: "me", status: "sent" },
+        socket.emit("send_message", {
+            conversationId,
+            senderId: myId,
+            text: input
+        });
+
+        // optimistic UI
+        setMessages((prev) => [
+            ...prev,
+            { text: input, senderId: myId }
         ]);
 
-        socket.emit("sendMessage", { sender, receiver, text: input });
-        socket.emit("stopTyping", { receiver });
         setInput("");
     };
+    useEffect(() => {
+        const fetchConversation = async () => {
+            const res = await fetch(
+                `http://localhost:5000/api/conversation/${conversationId}`
+            );
+            const data = await res.json();
+            console.log(data)
+
+            // 🔥 receiver বের করা
+            const receiver = data.participants.find(
+                (u) => u._id !== myId
+            );
+            setActiveUser(receiver);
+        };
+
+        fetchConversation();
+    }, [conversationId]);
+
 
     return (
         <div className="h-150 max-w-md mx-auto bg-gray-900 text-white flex flex-col">
 
             {/* HEADER */}
+
+            <div className="bg-gray-800 p-4 flex items-center gap-3">
+                <button onClick={() => navigate("/")}>
+                    <IoIosArrowBack size={24} />
+                </button>
+                <div className="flex justify-between items-center w-full">
+                    {activeUser && (
+                        <div>
+                            <p className="font-semibold">
+                                {activeUser.username}
+                            </p>
+                            <p className="text-xs text-green-400">
+                                Online
+                            </p>
+                        </div>
+                    )}
+                    <p className="text-xs text-end font-semibold">{myName} Signed In</p>
+
+                </div>
+
+
+            </div>
+            {/* 
             <div className="bg-gray-800 p-4 flex items-center gap-3">
                 <button onClick={() => navigate("/")}>
                     <IoIosArrowBack size={24} />
                 </button>
 
-                {activeUser && (
-                    <>
-                        <div className="relative">
-                            <img
-                                src={activeUser.avatar}
-                                className="w-8 h-8 rounded-full"
-                            />
-                            <span
-                                className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ${activeUser.online ? "bg-green-500" : "bg-gray-400"
-                                    }`}
-                            />
-                        </div>
-                        <p className="font-semibold">{activeUser.name}</p>
-                    </>
-                )}
-            </div>
+                <div className="flex-1 justify-center items-center">
+                    <p className="text-xs text-start font-semibold">Sent TO</p>
+                    <p className="text-xs text-end font-semibold">{myName} Signed In</p>
+
+                </div>
+            </div> */}
 
             {/* MESSAGES */}
             <div
@@ -301,8 +347,8 @@ const ChatUI = () => {
                     >
                         <div
                             className={`px-3 py-2 rounded-lg text-sm max-w-[75%] ${m.sender === "me"
-                                    ? "bg-green-600 text-white rounded-br-none"
-                                    : "bg-gray-700 text-white rounded-bl-none"
+                                ? "bg-green-600 text-white rounded-br-none"
+                                : "bg-gray-700 text-white rounded-bl-none"
                                 }`}
                         >
                             {m.text}
@@ -332,7 +378,7 @@ const ChatUI = () => {
                         value={input}
                         onChange={(e) => {
                             setInput(e.target.value);
-                            socket.emit("typing", { sender, receiver });
+                            // socket.emit("typing", { sender, receiver });
                             e.target.style.height = "auto";
                             e.target.style.height =
                                 Math.min(e.target.scrollHeight, 120) + "px";

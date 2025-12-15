@@ -15,11 +15,12 @@ const Auth = () => {
 
     try {
       const url = isLogin ? "/auth/login" : "/auth/register";
-
+  
       const res = await API.post(url, form);
       // only login returns token
       if (isLogin) {
         localStorage.setItem("token", res.data.token);
+        localStorage.setItem("userId", res.data.userId);   // 🔥 ADD THIS
         localStorage.setItem("username", res.data.username);
         navigate("/");
       } else {
