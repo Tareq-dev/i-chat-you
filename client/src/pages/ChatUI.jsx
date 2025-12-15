@@ -122,15 +122,14 @@ const ChatUI = () => {
                 <div className="flex justify-between items-center w-full">
                     {activeUser && (
                         <div>
-                            <p className="font-semibold">
+                            <p className="font-semibold capitalize">
                                 {activeUser.username}
                             </p>
-                            <p className="text-xs text-green-400">
+                            <p className="text-xs font-bold text-green-400">
                                 Online
                             </p>
                         </div>
                     )}
-                    <p className="text-xs text-end font-semibold">{myName} Signed In</p>
 
                 </div>
 
@@ -191,10 +190,11 @@ const ChatUI = () => {
 
             {/* INPUT */}
             <div className="p-3 bg-gray-800">
-                <div className="flex items-end gap-2">
+                <div className="flex items-end  gap-2">
                     <textarea
                         ref={textareaRef}
                         value={input}
+                        placeholder="Type here..."
                         onChange={(e) => {
                             setInput(e.target.value);
                             // socket.emit("typing", { sender, receiver });

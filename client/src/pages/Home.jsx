@@ -3,28 +3,7 @@ import { FiSearch } from "react-icons/fi";
 import { VscKebabVertical } from "react-icons/vsc";
 import { IoClose } from "react-icons/io5";
 import { useNavigate } from "react-router";
-
-const usersData = [
-    {
-        id: 1,
-        name: "Rahim",
-        avatar: "https://i.pravatar.cc/150?img=1",
-        lastMessage: "ঠিক আছে 👍",
-        time: "10:45 AM",
-        unread: 2,
-        online: true,
-    },
-    {
-        id: 2,
-        name: "Karim",
-        avatar: "https://i.pravatar.cc/150?img=2",
-        lastMessage: "কাল দেখা হবে",
-        time: "09:20 AM",
-        unread: 0,
-        online: false,
-    },
-];
-
+import socket from "../socket";
 function Home() {
     const myId = localStorage.getItem("userId");
     const [chats, setChats] = useState([]);
@@ -33,11 +12,28 @@ function Home() {
     const [searchResult, setSearchResult] = useState([]);
     const [loading, setLoading] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
-    const [users, setUsers] = useState(usersData);
     const navigate = useNavigate();
     const me = localStorage.getItem("username");
+    const handleLogout = () => {
+        // 🔥 localStorage clear
+        localStorage.removeItem("token");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("username");
+
+        // 🔥 socket disconnect (important)
+        if (socket?.connected) {
+            socket.disconnect();
+        }
+
+        // 🔥 settings close
+        setShowSettings(false);
+
+        // 🔥 login page এ পাঠাও
+        navigate("/login");
+    };
     useEffect(() => {
         const fetchChats = async () => {
+            if (myId === null) return;
             const res = await fetch(
                 `http://localhost:5000/api/conversation/user/${myId}`
             );
@@ -108,18 +104,28 @@ function Home() {
 
         navigate(`/chat/${conversation._id}`);
     };
-
-
     return (
-        <div className="h-155 max-w-md mx-auto bg-gray-900 text-white shadow-lg overflow-hidden relative">
+        <div className="h-155 max-w-md mx-auto bg-gray-900  text-white shadow-lg overflow-hidden relative">
 
-            <h1 className="text-3xl py-3 font-bold text-purple-500 text-center border-b border-gray-700">
-                I Chat You
-            </h1>
+            <div className="flex justify-between items-center px-3 border-b border-gray-700">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setShowSettings(true)}
+                        className="border border-gray-400 rounded-full w-7 h-7 flex justify-center items-center"
+                    >
+                        <VscKebabVertical className="font-extrabold" size={18} />
+                    </button>
+                    <p className="capitalize font-bold bungee-regular">{me}</p>
+                </div>
+                <h1 className="text-3xl py-3 font-extrabold ml-2 bungee-regular text-purple-400">
+                    I<span className="text-white">C</span>U
+                </h1>
+            </div>
+
 
             {/* Header */}
             <div className="flex justify-between items-center p-4">
-                <p className="text-lg font-semibold">Messages</p>
+                <p className="text-lg font-semibold open-sans-trk">Messages</p>
 
                 <div className="flex gap-2">
                     {/* SEARCH BUTTON */}
@@ -150,12 +156,7 @@ function Home() {
                         </button>
                     )}
 
-                    <button
-                        onClick={() => setShowSettings(true)}
-                        className="border border-gray-600 rounded-full w-8 h-8 flex justify-center items-center"
-                    >
-                        <VscKebabVertical size={18} />
-                    </button>
+
                 </div>
             </div>
 
@@ -268,10 +269,10 @@ function Home() {
                                         className="w-10 h-10 rounded-full"
                                     />
                                     <div>
-                                        <p className="font-semibold">
+                                        <p className=" open-sans-trk capitalize">
                                             {receiver?.username}
                                         </p>
-                                        <p className="text-sm text-gray-400 truncate max-w-[200px]">
+                                        <p className="text-sm open-sans-trk text-gray-400 truncate max-w-50">
                                             {c?.lastMessage || "No messages yet"}
                                         </p>
                                     </div>
@@ -279,7 +280,7 @@ function Home() {
 
                             </div>
 
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-gray-500 open-sans-trk">
                                 {new Date(c.updatedAt).toLocaleTimeString([], {
                                     hour: "2-digit",
                                     minute: "2-digit"
@@ -303,7 +304,7 @@ function Home() {
                         <button className="w-full text-left px-3 py-2 hover:bg-gray-700 rounded">
                             Profile
                         </button>
-                        <button className="w-full text-left px-3 py-2 hover:bg-gray-700 rounded text-red-400">
+                        <button onClick={handleLogout} className="w-full text-left px-3 py-2 hover:bg-gray-700 rounded text-red-400">
                             Logout
                         </button>
                     </div>

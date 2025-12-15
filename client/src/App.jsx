@@ -7,7 +7,7 @@ import ChatList from './pages/ChatList';
 
 function App() {
   return (
-    <div>
+    <div className='open-sans-trk'>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Auth />} />
