@@ -3,11 +3,15 @@
 
 Usign Mern and Socket.io for individual chat like whatsapp by userName only.
 
+ 
+## Screenshots
 
-## Demo
+### 🎨 Loginpage
+![Loginpage Screenshot](https://i.ibb.co.com/My0ZsmTw/1.jpg)
 
-Insert gif or link to demo
+### 📊 ChatList
+![ChatList Screenshot](https://i.ibb.co.com/FbzsxCz8/2.jpg)
 
-https://i.ibb.co.com/My0ZsmTw/1.jpg
-https://i.ibb.co.com/FbzsxCz8/2.jpg
-https://i.ibb.co.com/yFT6jk48/3.jpg
+### 📱 ChatUI
+![ChatUI View](https://i.ibb.co.com/yFT6jk48/3.jpg)
+
