@@ -14,6 +14,7 @@ module.exports = (io) => {
         senderId,
         text
       });
+ 
       await Conversation.findByIdAndUpdate(conversationId, {
         lastMessage: text
       });

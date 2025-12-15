@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FiSearch } from "react-icons/fi";
 import { VscKebabVertical } from "react-icons/vsc";
 import { IoClose } from "react-icons/io5";
@@ -26,6 +26,8 @@ const usersData = [
 ];
 
 function Home() {
+    const myId = localStorage.getItem("userId");
+    const [chats, setChats] = useState([]);
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchText, setSearchText] = useState("");
     const [searchResult, setSearchResult] = useState([]);
@@ -34,7 +36,18 @@ function Home() {
     const [users, setUsers] = useState(usersData);
     const navigate = useNavigate();
     const me = localStorage.getItem("username");
+    useEffect(() => {
+        const fetchChats = async () => {
+            const res = await fetch(
+                `http://localhost:5000/api/conversation/user/${myId}`
+            );
 
+            const data = await res.json();
+            setChats(data);
+        };
+
+        fetchChats();
+    }, [myId]);
     // 🔍 API CALL (ONLY ON BUTTON CLICK)
     const searchUsers = async () => {
         if (!searchText.trim()) return;
@@ -70,8 +83,12 @@ function Home() {
             setLoading(false);
         }
     };
+    const openConversation = (conversationId) => {
+        navigate(`/chat/${conversationId}`);
+    };
 
     const openChat = async (user) => {
+        console.log(user)
         const myId = localStorage.getItem("userId");
 
         const res = await fetch("http://localhost:5000/api/conversation", {
@@ -88,6 +105,7 @@ function Home() {
 
         const conversation = await res.json();
         // 👉 REAL individual chat
+
         navigate(`/chat/${conversation._id}`);
     };
 
@@ -191,18 +209,18 @@ function Home() {
             )}
 
             {/* User List */}
-            <div
+            {/* <div
                 className={`mt-3 overflow-y-auto h-full bg-gray-800 rounded-t-3xl ${searchOpen ? "opacity-40 pointer-events-none" : ""
                     }`}
             >
-                {users.map((user) => (
+                {chats.map((user) => (
                     <div
                         key={user.id}
                         onClick={() => openChat(user)}
                         className="flex items-center gap-3 px-4 py-3 hover:bg-gray-700 cursor-pointer"
                     >
                         <img
-                            src={user.avatar}
+                            src={'https://i.pravatar.cc/150?img=2'}
                             alt={user.name}
                             className="w-12 h-12 rounded-full"
                         />
@@ -226,8 +244,51 @@ function Home() {
                         )}
                     </div>
                 ))}
-            </div>
+            </div> */}
+            <div className="max-w-md mx-auto bg-gray-800 rounded-t-3xl min-h-screen text-white">
 
+                {chats?.map((c) => {
+                    // 🔥 receiver বের করা
+                    const receiver = c.participants.find(
+                        (u) => u._id !== myId
+                    );
+                    if (!receiver) return null; // 🔥 safety
+
+                    return (
+                        <div
+                            key={c._id}
+                            onClick={() => openConversation(c._id)}
+                            className="px-4 py-2 flex justify-between items-center border-b border-gray-700 cursor-pointer hover:bg-gray-800"
+                        >
+                            <div>
+                                <div className="flex items-center gap-3 mb-1">
+                                    <img
+                                        src={'https://i.pravatar.cc/150?img=2'}
+                                        alt={c.name}
+                                        className="w-10 h-10 rounded-full"
+                                    />
+                                    <div>
+                                        <p className="font-semibold">
+                                            {receiver?.username}
+                                        </p>
+                                        <p className="text-sm text-gray-400 truncate max-w-[200px]">
+                                            {c?.lastMessage || "No messages yet"}
+                                        </p>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <p className="text-xs text-gray-500">
+                                {new Date(c.updatedAt).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit"
+                                })}
+                            </p>
+                        </div>
+                    );
+                })}
+            </div>
             {/* Settings */}
             {showSettings && (
                 <div

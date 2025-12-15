@@ -25,6 +25,8 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/users", require("./routes/users"));
 app.use("/api/chats", require("./routes/chats"));
 app.use("/api/conversation", require("./routes/conversation"));
+app.use("/api/messages", require("./routes/messages"));
+
 
 
 chatSocket(io);

@@ -3,6 +3,7 @@ import ChatUI from './pages/ChatUI'
 import Auth from './pages/Auth'
 import Home from './pages/Home'
 import { Routes, Route } from "react-router";
+import ChatList from './pages/ChatList';
 
 function App() {
   return (
